@@ -16,22 +16,9 @@ import {
   ArrowDownRight,
   Target,
   Star,
-  Download,
-  FileText,
-  Sparkles,
 } from 'lucide-react';
 
 const API_BASE = '/api';
-
-function downloadFile(content, type, filename) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function DealMind() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -45,10 +32,6 @@ export default function DealMind() {
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [prestigeMode, setPrestigeMode] = useState(true);
-  const [actionToast, setActionToast] = useState(null);
 
   const loadData = useCallback(async () => {
     setError(null);
@@ -87,13 +70,6 @@ export default function DealMind() {
   }, [loadData]);
 
   useEffect(() => {
-    if (!actionToast) return;
-
-    const timer = setTimeout(() => setActionToast(null), 2600);
-    return () => clearTimeout(timer);
-  }, [actionToast]);
-
-  useEffect(() => {
     if (!watchlist.length && companies.length) {
       const defaults = companies
         .filter((company) => [1, 4].includes(company.id))
@@ -125,22 +101,6 @@ export default function DealMind() {
 
   const recentEvents = useMemo(() => {
     return events.slice(0, 6);
-  }, [events]);
-
-  const notifications = useMemo(() => {
-    const important = events.filter((event) => event.impact === 'High');
-    return [
-      ...important.map((event) => ({
-        title: `${event.company} • ${event.type}`,
-        body: event.description,
-        severity: 'critical',
-      })),
-      {
-        title: 'Neue Modellprognosen',
-        body: 'KI hat die Szenarien für DCF & LBO aktualisiert.',
-        severity: 'info',
-      },
-    ];
   }, [events]);
 
   const resetSelections = useCallback(() => {
@@ -191,12 +151,8 @@ export default function DealMind() {
   }
 
   return (
-    <div
-      className={`relative flex h-screen ${
-        prestigeMode ? 'bg-gradient-to-br from-slate-50 via-white to-slate-100' : 'bg-gray-50'
-      }`}
-    >
-      <div className="w-64 bg-gray-900 text-white flex flex-col shadow-2xl shadow-blue-500/10">
+    <div className="flex h-screen bg-gray-50">
+      <div className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center space-x-2">
             <Target className="w-8 h-8 text-blue-400" />
@@ -226,7 +182,7 @@ export default function DealMind() {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white/90 backdrop-blur border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
             <div className="relative flex-1 max-w-xl">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -235,26 +191,16 @@ export default function DealMind() {
                 placeholder="Search companies, tickers, or deals..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-            <div className="hidden md:flex items-center space-x-2 px-3 py-2 bg-blue-50 text-blue-800 rounded-lg border border-blue-100">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-semibold">AI Research Mode aktiv</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setNotificationsOpen((open) => !open)}
-              className="p-2 hover:bg-gray-100 rounded-lg relative transition"
-            >
+            <button className="p-2 hover:bg-gray-100 rounded-lg relative">
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
-            >
+            <button className="p-2 hover:bg-gray-100 rounded-lg">
               <Settings className="w-5 h-5 text-gray-600" />
             </button>
           </div>
@@ -299,10 +245,6 @@ export default function DealMind() {
           {activeView === 'workspaces' && (
             <WorkspacesView
               workspaces={dealWorkspaces}
-              onCreateWorkspace={(workspace) => {
-                setDealWorkspaces((prev) => [...prev, workspace]);
-                setActionToast('Workspace angelegt');
-              }}
               onViewWorkspace={(w) => {
                 setSelectedWorkspace(w);
                 setActiveView('workspace');
@@ -335,89 +277,6 @@ export default function DealMind() {
           )}
         </div>
       </div>
-
-      {notificationsOpen && (
-        <div className="absolute top-16 right-6 w-96 bg-white shadow-2xl border border-gray-200 rounded-xl p-4 space-y-3 z-20">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm uppercase text-gray-500">Signal Inbox</div>
-              <div className="text-lg font-semibold text-gray-900">Kritische Hinweise</div>
-            </div>
-            <button className="text-sm text-blue-600" onClick={() => setNotificationsOpen(false)}>
-              Schließen
-            </button>
-          </div>
-          {notifications.map((item, idx) => (
-            <div key={idx} className="p-3 rounded-lg border border-gray-100 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="font-semibold text-gray-900">{item.title}</div>
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    item.severity === 'critical' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  {item.severity === 'critical' ? 'High' : 'Info'}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 mt-1">{item.body}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {settingsOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-30">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-[480px] p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm uppercase text-gray-500">Appearance</div>
-                <div className="text-xl font-semibold text-gray-900">Executive Mode</div>
-              </div>
-              <button onClick={() => setSettingsOpen(false)} className="text-gray-500 hover:text-gray-700">
-                Close
-              </button>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-              <div>
-                <div className="font-medium text-gray-900">Prestige Style</div>
-                <div className="text-sm text-gray-600">Edler Gradient, dezente Schatten</div>
-              </div>
-              <label className="inline-flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={prestigeMode}
-                  onChange={() => setPrestigeMode((val) => !val)}
-                  className="accent-blue-600 w-5 h-5"
-                />
-                <span className="text-sm text-gray-700">Aktiv</span>
-              </label>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-              <div>
-                <div className="font-medium text-gray-900">Benachrichtigungen</div>
-                <div className="text-sm text-gray-600">Inbox geschlossen nach Aktion</div>
-              </div>
-              <button
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg"
-                onClick={() => {
-                  setNotificationsOpen(false);
-                  setSettingsOpen(false);
-                  setActionToast('Benachrichtigungen aktualisiert');
-                }}
-              >
-                Anwenden
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {actionToast && (
-        <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-40">
-          <Sparkles className="w-4 h-4 text-blue-300" />
-          <span className="text-sm font-medium">{actionToast}</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -787,40 +646,7 @@ function MetricCard({ label, value }) {
   );
 }
 
-function InputField({ label, value, onChange }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        step="0.1"
-      />
-    </div>
-  );
-}
-
-function WorkspacesView({ workspaces, onViewWorkspace, onCreateWorkspace }) {
-  const createQuickWorkspace = () => {
-    const buyerPool = ['CloudScale Inc', 'AIWare Solutions', 'TechVision Corp'];
-    const targetPool = ['SecureNet GmbH', 'DataFlow Systems', 'FinTech Innovations'];
-    const randomBuyer = buyerPool[Math.floor(Math.random() * buyerPool.length)];
-    const randomTarget = targetPool[Math.floor(Math.random() * targetPool.length)];
-    const workspace = {
-      id: Date.now(),
-      buyer: randomBuyer,
-      target: randomTarget,
-      status: 'Active',
-      fitScore: Math.floor(Math.random() * 15) + 70,
-      synergies: Math.floor(Math.random() * 30) + 35,
-      createdDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    };
-
-    onCreateWorkspace(workspace);
-  };
-
+function WorkspacesView({ workspaces, onViewWorkspace }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -828,12 +654,7 @@ function WorkspacesView({ workspaces, onViewWorkspace, onCreateWorkspace }) {
           <h2 className="text-2xl font-bold text-gray-900">Deal Workspaces</h2>
           <p className="text-gray-600 mt-1">Active deal analysis and scenario modeling</p>
         </div>
-        <button
-          onClick={createQuickWorkspace}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow"
-        >
-          + New Workspace
-        </button>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">+ New Workspace</button>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -875,7 +696,6 @@ function WorkspaceDetail({ workspace, companies, onBack }) {
   const target = companies.find((c) => c.name === workspace.target) || companies.find((c) => c.id === workspace.target.id);
   const [offerPrice, setOfferPrice] = useState(target ? target.lastPrice * 1.3 : 0);
   const [cashPortion, setCashPortion] = useState(70);
-  const [memoMessage, setMemoMessage] = useState(null);
 
   if (!buyer || !target) {
     return (
@@ -892,28 +712,6 @@ function WorkspaceDetail({ workspace, companies, onBack }) {
   const premium = (((offerPrice - target.lastPrice) / target.lastPrice) * 100).toFixed(1);
   const dealValue = ((offerPrice * target.marketCap) / target.lastPrice).toFixed(2);
 
-  const exportWorkspace = () => {
-    const csv = [
-      ['Buyer', buyer.name],
-      ['Target', target.name],
-      ['Offer Price', offerPrice],
-      ['Premium %', premium],
-      ['Transaction Value (B)', dealValue],
-      ['Cash Portion %', cashPortion],
-    ]
-      .map((row) => row.join(','))
-      .join('\n');
-
-    downloadFile(csv, 'text/csv', 'workspace-analysis.csv');
-    setMemoMessage('Exportiert als CSV');
-  };
-
-  const generateMemo = () => {
-    const memo = `Deal Memo\n===========\n\nBuyer: ${buyer.name}\nTarget: ${target.name}\nPremium: ${premium}%\nEV: $${dealValue}B\nCash/Stock: ${cashPortion}%/${100 - cashPortion}%\n\nRationale:\n- Technologie-Stack ergänzt sich\n- Zugang zu neuen Regionen\n- Synergien: $${workspace.synergies}M`;
-    downloadFile(memo, 'text/markdown', 'deal-memo.md');
-    setMemoMessage('Memo generiert');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -922,20 +720,8 @@ function WorkspaceDetail({ workspace, companies, onBack }) {
           <span>Back to Workspaces</span>
         </button>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={exportWorkspace}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium flex items-center space-x-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export to Excel</span>
-          </button>
-          <button
-            onClick={generateMemo}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center space-x-2"
-          >
-            <FileText className="w-4 h-4" />
-            <span>Generate Memo</span>
-          </button>
+          <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Export to Excel</button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Generate Memo</button>
         </div>
       </div>
 
@@ -943,12 +729,6 @@ function WorkspaceDetail({ workspace, companies, onBack }) {
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
           Deal Analysis: {workspace.buyer.name || workspace.buyer} acquires {workspace.target.name || workspace.target}
         </h1>
-        {memoMessage && (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-blue-50 text-blue-800 text-sm inline-flex items-center space-x-2">
-            <Sparkles className="w-4 h-4" />
-            <span>{memoMessage}</span>
-          </div>
-        )}
         <div className="grid grid-cols-4 gap-4">
           <MetricCard label="Strategic Fit Score" value={workspace.fitScore.toString()} />
           <MetricCard label="Est. Revenue Synergies" value={`$${Math.floor(workspace.synergies * 0.6)}M`} />
@@ -1110,141 +890,60 @@ function SignalRadar({ events, companies, onViewCompany }) {
 
 function ModelingTools() {
   const [modelType, setModelType] = useState('dcf');
-  const [aiState, setAiState] = useState({ status: 'idle', progress: 0, summary: '' });
-  const [output, setOutput] = useState(null);
-  const [inputs, setInputs] = useState({
-    dcf: { revenueGrowth: 8.5, terminalGrowth: 2.5, wacc: 9.2, years: 5 },
-    lbo: { entry: 10.5, exit: 11.0, leverage: 5.5, interest: 7.5 },
-    merger: { premium: 28, synergies: 85, cash: 65, costOfDebt: 6.8 },
-  });
-
-  const updateInput = (group, key, value) => {
-    setInputs((prev) => ({ ...prev, [group]: { ...prev[group], [key]: value } }));
-  };
-
-  const simulateTraining = (payload) => {
-    setAiState({ status: 'training', progress: 0, summary: 'KI kalibriert Szenarien...' });
-
-    const checkpoints = [25, 55, 78, 92, 100];
-    checkpoints.forEach((pct, idx) => {
-      setTimeout(() => {
-        setAiState({
-          status: pct === 100 ? 'ready' : 'training',
-          progress: pct,
-          summary: pct === 100 ? 'Modelle aktualisiert' : `Feature-Engineering ${idx + 1}/5`,
-        });
-      }, 300 * idx);
-    });
-
-    const valuation = Math.max(0, payload.base * (1 + payload.premium / 100));
-    const irr = Math.min(35, Math.max(9, payload.irrBase + payload.alpha));
-
-    setTimeout(() => {
-      setOutput({
-        headline: payload.headline,
-        valuation: valuation.toFixed(2),
-        irr: `${irr.toFixed(1)}%`,
-        notes: payload.notes,
-      });
-    }, 1600);
-  };
-
-  const handleGenerate = () => {
-    if (modelType === 'dcf') {
-      const dcf = inputs.dcf;
-      simulateTraining({
-        base: 2.8,
-        premium: dcf.terminalGrowth * 4,
-        irrBase: 11,
-        alpha: (dcf.revenueGrowth - dcf.wacc / 2) / 2,
-        headline: 'DCF: intrinsischer Wert',
-        notes: `WACC ${dcf.wacc}% | Terminal ${dcf.terminalGrowth}% | ${dcf.years} Jahre Projektion`,
-      });
-    }
-
-    if (modelType === 'lbo') {
-      const lbo = inputs.lbo;
-      simulateTraining({
-        base: 3.2,
-        premium: (lbo.exit - lbo.entry) * 3,
-        irrBase: 15,
-        alpha: 1 + (lbo.leverage - 4.5) * 1.2 - lbo.interest / 10,
-        headline: 'LBO: Gearing-optimierte Rendite',
-        notes: `Einstieg ${lbo.entry}x → Exit ${lbo.exit}x | Leverage ${lbo.leverage}x`,
-      });
-    }
-
-    if (modelType === 'merger') {
-      const merger = inputs.merger;
-      simulateTraining({
-        base: 4.1,
-        premium: merger.premium,
-        irrBase: 12,
-        alpha: merger.synergies / 80 - merger.costOfDebt / 12,
-        headline: 'Merger: Pro-Forma Synergiehebel',
-        notes: `Premium ${merger.premium}% | Synergien ${merger.synergies}M | Cash ${merger.cash}%`,
-      });
-    }
-  };
-
-  const exportModel = () => {
-    const summary = output
-      ? `Titel: ${output.headline}\nBewertung: $${output.valuation}B\nIRR: ${output.irr}\nNotizen: ${output.notes}`
-      : 'Noch keine Ergebnisse vorhanden.';
-    downloadFile(summary, 'text/plain', 'model-output.txt');
-  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Modeling Tools</h2>
-          <p className="text-gray-600 mt-1">Automatisierte Bewertungen mit eingebetteter KI-Kalibrierung</p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-          <Sparkles className="w-4 h-4" />
-          <span>{aiState.status === 'training' ? 'Training läuft' : 'KI bereit'}</span>
-          <span className="font-semibold">{aiState.progress}%</span>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Modeling Tools</h2>
+        <p className="text-gray-600 mt-1">Automated valuation and transaction modeling</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex flex-wrap gap-3 mb-6">
-          {[
-            { key: 'dcf', label: 'DCF Model' },
-            { key: 'lbo', label: 'LBO Model' },
-            { key: 'merger', label: 'Merger Model' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setModelType(tab.key)}
-              className={`px-4 py-2 rounded-lg font-medium transition shadow-sm ${
-                modelType === tab.key
-                  ? 'bg-blue-600 text-white shadow-blue-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex space-x-4 mb-6">
+          <button
+            onClick={() => setModelType('dcf')}
+            className={`px-4 py-2 rounded-lg font-medium ${modelType === 'dcf' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            DCF Model
+          </button>
+          <button
+            onClick={() => setModelType('lbo')}
+            className={`px-4 py-2 rounded-lg font-medium ${modelType === 'lbo' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            LBO Model
+          </button>
+          <button
+            onClick={() => setModelType('merger')}
+            className={`px-4 py-2 rounded-lg font-medium ${modelType === 'merger' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Merger Model
+          </button>
         </div>
 
         {modelType === 'dcf' && (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900">DCF Valuation Model</h3>
             <div className="grid grid-cols-2 gap-6">
-              <InputField
-                label="Revenue Growth Rate (%)"
-                value={inputs.dcf.revenueGrowth}
-                onChange={(v) => updateInput('dcf', 'revenueGrowth', v)}
-              />
-              <InputField
-                label="Terminal Growth Rate (%)"
-                value={inputs.dcf.terminalGrowth}
-                onChange={(v) => updateInput('dcf', 'terminalGrowth', v)}
-              />
-              <InputField label="WACC (%)" value={inputs.dcf.wacc} onChange={(v) => updateInput('dcf', 'wacc', v)} />
-              <InputField label="Forecast Period (years)" value={inputs.dcf.years} onChange={(v) => updateInput('dcf', 'years', v)} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Revenue Growth Rate (%)</label>
+                <input type="number" defaultValue="8.5" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Terminal Growth Rate (%)</label>
+                <input type="number" defaultValue="2.5" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">WACC (%)</label>
+                <input type="number" defaultValue="9.2" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Forecast Period (years)</label>
+                <input type="number" defaultValue="5" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+            </div>
+            <div className="flex space-x-4 mt-6">
+              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Generate Model</button>
+              <button className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Export to Excel</button>
             </div>
           </div>
         )}
@@ -1253,14 +952,34 @@ function ModelingTools() {
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900">LBO Transaction Model</h3>
             <div className="grid grid-cols-2 gap-6">
-              <InputField
-                label="Purchase Price Multiple (EV/EBITDA)"
-                value={inputs.lbo.entry}
-                onChange={(v) => updateInput('lbo', 'entry', v)}
-              />
-              <InputField label="Exit Multiple (EV/EBITDA)" value={inputs.lbo.exit} onChange={(v) => updateInput('lbo', 'exit', v)} />
-              <InputField label="Debt / EBITDA" value={inputs.lbo.leverage} onChange={(v) => updateInput('lbo', 'leverage', v)} />
-              <InputField label="Interest Rate (%)" value={inputs.lbo.interest} onChange={(v) => updateInput('lbo', 'interest', v)} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Purchase Price Multiple (EV/EBITDA)</label>
+                <input type="number" defaultValue="10.5" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Exit Multiple (EV/EBITDA)</label>
+                <input type="number" defaultValue="11.0" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Debt / EBITDA</label>
+                <input type="number" defaultValue="5.5" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sponsor Equity (%)</label>
+                <input type="number" defaultValue="35" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Entry Leverage (x)</label>
+                <input type="number" defaultValue="6.0" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Exit Year</label>
+                <input type="number" defaultValue="2029" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+            </div>
+            <div className="flex space-x-4 mt-6">
+              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Run Model</button>
+              <button className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Export to Excel</button>
             </div>
           </div>
         )}
@@ -1269,44 +988,35 @@ function ModelingTools() {
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900">Merger Model</h3>
             <div className="grid grid-cols-2 gap-6">
-              <InputField label="Offer Premium (%)" value={inputs.merger.premium} onChange={(v) => updateInput('merger', 'premium', v)} />
-              <InputField label="Synergies (M)" value={inputs.merger.synergies} onChange={(v) => updateInput('merger', 'synergies', v)} />
-              <InputField label="Cash Consideration (%)" value={inputs.merger.cash} onChange={(v) => updateInput('merger', 'cash', v)} />
-              <InputField label="Cost of Debt (%)" value={inputs.merger.costOfDebt} onChange={(v) => updateInput('merger', 'costOfDebt', v)} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Buyer</label>
+                <input type="text" defaultValue="CloudScale Inc" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Target</label>
+                <input type="text" defaultValue="SecureNet GmbH" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cost Synergies ($M)</label>
+                <input type="number" defaultValue="40" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Revenue Synergies ($M)</label>
+                <input type="number" defaultValue="55" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Consideration Mix (Cash %)</label>
+                <input type="number" defaultValue="65" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Close</label>
+                <input type="text" defaultValue="Q3 2025" className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
             </div>
-          </div>
-        )}
-
-        <div className="flex space-x-4 mt-6">
-          <button
-            onClick={handleGenerate}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow"
-          >
-            Generate Model
-          </button>
-          <button
-            onClick={exportModel}
-            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium border border-gray-200"
-          >
-            Export to Excel
-          </button>
-        </div>
-
-        {output && (
-          <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg grid grid-cols-3 gap-4">
-            <div>
-              <div className="text-xs uppercase text-gray-500">Headline</div>
-              <div className="text-lg font-semibold text-gray-900">{output.headline}</div>
+            <div className="flex space-x-4 mt-6">
+              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Evaluate Deal</button>
+              <button className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">Export to Excel</button>
             </div>
-            <div>
-              <div className="text-xs uppercase text-gray-500">Fair Value</div>
-              <div className="text-lg font-semibold text-green-700">${output.valuation}B</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase text-gray-500">IRR Outlook</div>
-              <div className="text-lg font-semibold text-blue-700">{output.irr}</div>
-            </div>
-            <div className="col-span-3 text-sm text-gray-700">{output.notes}</div>
           </div>
         )}
       </div>
