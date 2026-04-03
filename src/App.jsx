@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import PhishingDetector from './PhishingDetector.jsx';
 import {
   TrendingUp,
   Building2,
@@ -16,6 +17,7 @@ import {
   ArrowDownRight,
   Target,
   Star,
+  Shield,
 } from 'lucide-react';
 
 const API_BASE = '/api';
@@ -170,6 +172,7 @@ export default function DealMind() {
           <NavItem icon={Radio} label="Signal Radar" active={activeView === 'radar'} onClick={() => setActiveView('radar')} />
           <NavItem icon={Calculator} label="Modeling Tools" active={activeView === 'modeling'} onClick={() => setActiveView('modeling')} />
           <NavItem icon={Star} label="Watchlist" badge={watchlist.length} active={activeView === 'watchlist'} onClick={() => setActiveView('watchlist')} />
+          <NavItem icon={Shield} label="Phishing Detektor" active={activeView === 'phishing'} onClick={() => setActiveView('phishing')} />
         </nav>
 
         <div className="p-4 border-t border-gray-800 text-xs text-gray-400">
@@ -265,6 +268,7 @@ export default function DealMind() {
             />
           )}
           {activeView === 'modeling' && <ModelingTools />}
+          {activeView === 'phishing' && <PhishingDetector />}
           {activeView === 'watchlist' && (
             <WatchlistView
               watchlist={watchlist}
